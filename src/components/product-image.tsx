@@ -15,11 +15,13 @@ export function ProductImage({
   alt,
   priority = false,
   sizes,
+  className = 'object-cover',
 }: {
   src: string;
   alt: string;
   priority?: boolean;
   sizes: string;
+  className?: string;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -38,7 +40,7 @@ export function ProductImage({
       fill
       sizes={sizes}
       priority={priority}
-      className="object-cover"
+      className={className}
       onError={() => setFailed(true)}
     />
   );

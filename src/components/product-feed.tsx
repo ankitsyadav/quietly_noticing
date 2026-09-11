@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { formatDiscount, formatPrice } from '@/lib/format';
 import { ProductCard } from './product-card';
+import { ProductImage } from './product-image';
 import { ADAPTIVE_GRID_THRESHOLD } from '@/lib/constants';
 
 /**
@@ -44,10 +44,9 @@ function EditorialRow({ product }: { product: Product }) {
   return (
     <Link href={href} className="group flex flex-col gap-3">
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-sink">
-        <Image
+        <ProductImage
           src={product.images[0]!}
           alt={`${product.title} — ${product.category}`}
-          fill
           sizes="(min-width: 640px) 560px, 100vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
         />

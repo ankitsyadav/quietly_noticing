@@ -7,8 +7,9 @@
  * scroll into view, then its observer detaches (Q39) so a long /shop grid
  * never accumulates hundreds of live observers.
  */
+import { useRef } from 'react';
 import Link from 'next/link';
-import { m } from 'framer-motion';
+import { m, useInView } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { formatPrice, formatDiscount } from '@/lib/format';
@@ -22,12 +23,21 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const href = `/product/${product.slug}`;
   const alt = `${product.title} — ${product.category}`;
 
+  // `whileInView`/`viewport` need framer-motion's `inView` Feature, which
+  // isn't bundled into either domAnimation or domMax in this version — only
+  // the public useInView hook works reliably with LazyMotion's `m`
+  // components, so the reveal is driven by that instead of the declarative
+  // prop. `once: true` still detaches the observer after the first reveal
+  // (Q39) so a long /shop grid doesn't accumulate hundreds of live ones.
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: '0px 0px -40px 0px' });
+
   return (
     <m.article
+      ref={ref}
       variants={revealUp}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: '0px 0px -40px 0px' }}
+      animate={inView ? 'visible' : 'hidden'}
       className="group flex flex-col overflow-hidden rounded-lg border border-line bg-surface"
     >
       <Link href={href} className="relative block aspect-[4/5] overflow-hidden bg-sink" tabIndex={-1}>
