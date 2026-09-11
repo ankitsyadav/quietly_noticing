@@ -27,12 +27,12 @@ export function Hero() {
     >
       <m.div custom={0} variants={heroItem}>
         <Image
-          src="https://picsum.photos/seed/quietly-noticing-avatar/160/160"
+          src="/avatar.jpg"
           alt={site.creator.displayName}
           width={72}
           height={72}
           priority
-          className="rounded-full border border-line object-cover"
+          className="aspect-square rounded-full border border-line object-cover"
         />
       </m.div>
 
