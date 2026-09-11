@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function ShopPage() {
   const catalog = await getCatalog();
-  const products = catalog.products.filter((p) => !p.soldOut);
+  const products = catalog.products;
 
   return (
     <>

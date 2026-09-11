@@ -23,7 +23,7 @@ export const colors = {
 
   /** Primary type. */
   ink: '#1C1917',
-  /** Secondary type: platform names, captions, the price caveat. */
+  /** Secondary type: platform names, captions, muted copy. */
   muted: '#78716C',
 
   /** Decorative clay: CTA fills, rules, 24px+ display type. */
@@ -55,9 +55,9 @@ export const radius = {
 } as const;
 
 export const fonts = {
-  /** Fraunces — wordmark, page headings, product titles. Never prices. */
+  /** Fraunces — wordmark, page headings, product titles. */
   display: "'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif",
-  /** Inter — everything else. Prices use its tabular figures. */
+  /** Inter — everything else. Numerals use its tabular figures. */
   body: "'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 } as const;
 

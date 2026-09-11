@@ -1,39 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { discountPercent, formatPrice, normalizeImageUrl, parsePrice, productSlug, slugify } from '../src/lib/normalize';
-
-describe('parsePrice', () => {
-  it.each([
-    ['299', 299],
-    ['₹299', 299],
-    ['Rs. 1,299', 1299],
-    ['1,299.00', 1299],
-    ['299/-', 299],
-    ['  649  ', 649],
-    ['INR 999', 999],
-  ])('parses %s -> %d', (input, expected) => {
-    expect(parsePrice(input)).toBe(expected);
-  });
-
-  it.each(['', 'free', 'call for price', '12a3', '-50', '0'])('rejects %s', (input) => {
-    expect(parsePrice(input)).toBeNull();
-  });
-});
-
-describe('discountPercent', () => {
-  it('computes whole-percent savings', () => {
-    expect(discountPercent(299, 999)).toBe(70);
-  });
-  it('returns null when MRP is missing', () => {
-    expect(discountPercent(299, null)).toBeNull();
-  });
-  it('returns null when MRP is not actually higher', () => {
-    expect(discountPercent(299, 299)).toBeNull();
-    expect(discountPercent(299, 250)).toBeNull();
-  });
-  it('returns null for a sub-1% rounding artifact', () => {
-    expect(discountPercent(999, 1000)).toBeNull();
-  });
-});
+import { inferPlatform, normalizeImageUrl, productSlug, slugify } from '../src/lib/normalize';
 
 describe('slugify / productSlug', () => {
   it('slugifies titles predictably', () => {
@@ -49,10 +15,25 @@ describe('slugify / productSlug', () => {
   });
 });
 
-describe('formatPrice', () => {
-  it('formats with Indian grouping and no decimals', () => {
-    expect(formatPrice(1299)).toBe('₹1,299');
-    expect(formatPrice(299)).toBe('₹299');
+describe('inferPlatform', () => {
+  it.each([
+    ['https://amazon.in/dp/example', 'Amazon'],
+    ['https://amzn.to/abc123', 'Amazon'],
+    ['https://affiliate.meesho.com/collection/xyz', 'Meesho'],
+    ['https://www.flipkart.com/item', 'Flipkart'],
+    ['https://myntra.com/item', 'Myntra'],
+    ['https://ajio.com/item', 'Ajio'],
+    ['https://nykaa.com/item', 'Nykaa'],
+  ])('infers %s -> %s', (url, expected) => {
+    expect(inferPlatform(url)).toBe(expected);
+  });
+
+  it('falls back to the bare hostname for an unknown merchant', () => {
+    expect(inferPlatform('https://example-store.com/item')).toBe('example-store.com');
+  });
+
+  it('falls back to "Other" for an unparseable URL', () => {
+    expect(inferPlatform('not a url')).toBe('Other');
   });
 });
 
@@ -60,6 +41,10 @@ describe('normalizeImageUrl', () => {
   it('accepts a plain https image URL', () => {
     const result = normalizeImageUrl('https://i.postimg.cc/abc123/hoops.jpg');
     expect(result).toEqual({ url: 'https://i.postimg.cc/abc123/hoops.jpg' });
+  });
+  it('accepts a real Meesho CDN image URL', () => {
+    const result = normalizeImageUrl('https://images.meesho.com/images/products/470217206/ej4hl_512.avif?width=512');
+    expect('url' in result).toBe(true);
   });
   it('rewrites a Google Drive share link to a direct-serve URL', () => {
     const result = normalizeImageUrl('https://drive.google.com/file/d/1AbCdEfGhIjKlMn/view?usp=sharing');

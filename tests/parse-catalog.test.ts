@@ -1,34 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { buildCatalog, parseCategories, type ValueGrid } from '../src/lib/parse-catalog';
+import { buildCatalog } from '../src/lib/parse-catalog';
 
-const productHeaders = [
-  'Id', 'Title', 'Note', 'Description', 'Category', 'Platform',
-  'Affiliate_Link', 'Price', 'MRP', 'Badge', 'Featured', 'Status',
-  'Pic_1', 'Pic_2', 'Pic_3', 'Pic_4',
-];
+const headers = ['Id', 'Title', 'Description', 'Category', 'Affliate_Link', 'Pic_1', 'Pic_2', 'Pic_3', 'Pic_4'];
 
-const longNote = 'I loved this because it looks so premium without being expensive at all, and it genuinely photographs beautifully in every light I have tried.';
+const longDescription =
+  'These stunning oxidized silver jhumkas feature vibrant red, green, and pink hues, perfect for festive occasions and everyday wear alike.';
 
 function row(overrides: Record<string, string>): string[] {
   const base: Record<string, string> = {
-    Id: '1', Title: 'Gold Plated Hoops', Note: longNote, Description: 'Lightweight everyday hoops.',
-    Category: 'Jewellery', Platform: '', Affiliate_Link: 'https://amazon.in/x', Price: '299', MRP: '999',
-    Badge: '', Featured: '', Status: '', Pic_1: 'https://i.postimg.cc/a/x.jpg', Pic_2: '', Pic_3: '', Pic_4: '',
+    Id: '1', Title: 'Oxidized Silver Jhumkas', Description: longDescription,
+    Category: 'Jewellery', Affliate_Link: 'https://affiliate.meesho.com/collection/abc',
+    Pic_1: 'https://images.meesho.com/images/products/1/a.avif', Pic_2: '', Pic_3: '', Pic_4: '',
   };
   const merged = { ...base, ...overrides };
-  return productHeaders.map((h) => merged[h] ?? '');
+  return headers.map((h) => merged[h] ?? '');
 }
-
-const categoriesGrid: ValueGrid = [
-  ['Name', 'Slug', 'Order', 'Cover', 'Blurb', 'Featured'],
-  ['Jewellery', 'jewellery', '1', '', 'Everyday gold-tone pieces.', 'true'],
-];
 
 function catalog(rows: string[][]) {
   return buildCatalog({
-    productsGrid: [productHeaders, ...rows],
-    categoriesGrid,
-    collectionsGrid: [['Name', 'Slug', 'Product_Ids', 'Caption', 'Cover']],
+    productsGrid: [headers, ...rows],
     syncedAt: new Date().toISOString(),
     fromSnapshot: false,
   });
@@ -40,40 +30,45 @@ describe('buildCatalog — happy path', () => {
     expect(c.issues).toHaveLength(0);
     expect(c.products).toHaveLength(1);
     const p = c.products[0]!;
-    expect(p.slug).toBe('gold-plated-hoops-1');
-    expect(p.discountPercent).toBe(70);
-    expect(p.platform).toBe('Amazon'); // inferred, since Platform column left blank
-    expect(p.indexable).toBe(true); // note is >=120 chars
+    expect(p.slug).toBe('oxidized-silver-jhumkas-1');
+    expect(p.platform).toBe('Meesho'); // inferred from the affiliate URL
+    expect(p.indexable).toBe(true); // description is >=120 chars
   });
 
   it('header order does not matter for parsing correctness', () => {
-    // Shuffle headers and the corresponding row values together.
-    const shuffled = [...productHeaders].reverse();
+    const shuffled = [...headers].reverse();
     const values = row({});
-    const map = new Map(productHeaders.map((h, i) => [h, values[i]]));
+    const map = new Map(headers.map((h, i) => [h, values[i]]));
     const shuffledRow = shuffled.map((h) => map.get(h) ?? '');
     const c = buildCatalog({
       productsGrid: [shuffled, shuffledRow],
-      categoriesGrid,
-      collectionsGrid: [['Name']],
       syncedAt: new Date().toISOString(),
       fromSnapshot: false,
     });
     expect(c.products).toHaveLength(1);
-    expect(c.products[0]!.title).toBe('Gold Plated Hoops');
+    expect(c.products[0]!.title).toBe('Oxidized Silver Jhumkas');
+  });
+
+  it('accepts the corrected "Affiliate_Link" spelling too', () => {
+    const fixedHeaders = headers.map((h) => (h === 'Affliate_Link' ? 'Affiliate_Link' : h));
+    const c = buildCatalog({
+      productsGrid: [fixedHeaders, row({})],
+      syncedAt: new Date().toISOString(),
+      fromSnapshot: false,
+    });
+    expect(c.products).toHaveLength(1);
   });
 });
 
 describe('buildCatalog — resilience', () => {
-  it('skips a row with a bad price instead of throwing, and explains why', () => {
-    const c = catalog([row({ Id: '2', Price: 'call for price' })]);
-    expect(c.products).toHaveLength(0);
-    expect(c.issues[0]?.reason).toMatch(/Price/);
+  it('skips a row missing the affiliate link', () => {
+    const c = catalog([row({ Id: '2', Affliate_Link: '' })]);
+    expect(c.issues[0]?.reason).toMatch(/Affliate_Link is empty/);
   });
 
-  it('skips a row missing the affiliate link', () => {
-    const c = catalog([row({ Id: '3', Affiliate_Link: '' })]);
-    expect(c.issues[0]?.reason).toMatch(/Affiliate_Link is empty/);
+  it('skips a row with a non-https affiliate link', () => {
+    const c = catalog([row({ Id: '3', Affliate_Link: 'meesho.com/x' })]);
+    expect(c.issues[0]?.reason).toMatch(/https:\/\//);
   });
 
   it('flags duplicate Ids without crashing', () => {
@@ -82,26 +77,18 @@ describe('buildCatalog — resilience', () => {
     expect(c.issues.some((i) => i.reason.includes('duplicate Id'))).toBe(true);
   });
 
-  it('hides Draft rows without counting them as issues', () => {
-    const c = catalog([row({ Id: '4', Status: 'Draft' })]);
-    expect(c.products).toHaveLength(0);
-    expect(c.issues).toHaveLength(0);
-    expect(c.draftCount).toBe(1);
-  });
-
-  it('marks Sold Out products as soldOut rather than dropping them', () => {
-    const c = catalog([row({ Id: '5', Status: 'Sold Out' })]);
-    expect(c.products).toHaveLength(1);
-    expect(c.products[0]!.soldOut).toBe(true);
-  });
-
   it('ignores a fully blank row silently', () => {
-    const c = catalog([row({}), productHeaders.map(() => '')]);
+    const c = catalog([row({}), headers.map(() => '')]);
     expect(c.products).toHaveLength(1);
     expect(c.issues).toHaveLength(0);
   });
 
-  it('an unknown category still produces a working product', () => {
+  it('rejects a row with no valid Pic_1', () => {
+    const c = catalog([row({ Id: '4', Pic_1: '' })]);
+    expect(c.issues[0]?.reason).toMatch(/Pic_1/);
+  });
+
+  it('an unknown category still produces a working product with its own derived category', () => {
     const c = catalog([row({ Id: '6', Category: 'Stationery' })]);
     expect(c.products).toHaveLength(1);
     expect(c.categories.some((cat) => cat.slug === 'stationery')).toBe(true);
@@ -109,26 +96,26 @@ describe('buildCatalog — resilience', () => {
 });
 
 describe('buildCatalog — indexability gate', () => {
-  it('a short or missing note is not indexable', () => {
-    const c = catalog([row({ Id: '7', Note: 'Cute!' })]);
+  it('a short or missing description is not indexable', () => {
+    const c = catalog([row({ Id: '7', Description: 'Cute!' })]);
     expect(c.products[0]!.indexable).toBe(false);
     expect(c.notIndexable).toHaveLength(1);
   });
 
-  it('sold-out products are excluded from the notIndexable nudge', () => {
-    const c = catalog([row({ Id: '8', Note: '', Status: 'Sold Out' })]);
-    expect(c.notIndexable).toHaveLength(0);
+  it('description is optional — a missing one just is not indexable', () => {
+    const c = catalog([row({ Id: '8', Description: '' })]);
+    expect(c.products).toHaveLength(1);
+    expect(c.products[0]!.indexable).toBe(false);
   });
 });
 
-describe('parseCategories', () => {
-  it('sorts by Order', () => {
-    const grid: ValueGrid = [
-      ['Name', 'Slug', 'Order', 'Cover', 'Blurb', 'Featured'],
-      ['Beauty', 'beauty', '2', '', '', ''],
-      ['Jewellery', 'jewellery', '1', '', '', ''],
-    ];
-    const cats = parseCategories(grid);
-    expect(cats.map((c) => c.slug)).toEqual(['jewellery', 'beauty']);
+describe('categories — pure derivation (no Categories tab)', () => {
+  it('derives categories from distinct product Category values, sorted alphabetically', () => {
+    const c = catalog([
+      row({ Id: '1', Category: 'Jewellery' }),
+      row({ Id: '2', Category: 'Bags' }),
+      row({ Id: '3', Category: 'Jewellery' }),
+    ]);
+    expect(c.categories.map((cat) => cat.name)).toEqual(['Bags', 'Jewellery']);
   });
 });

@@ -23,12 +23,9 @@ export default function DisclosurePage() {
           </p>
           <p>{site.disclosure.amazonRequired}</p>
           <p>
-            {site.name} never processes payments or sees your card details. When you tap Shop now, you&apos;re taken
-            to the retailer&apos;s own website to complete your purchase there.
-          </p>
-          <p className="text-muted">
-            Prices shown are what I saw at the time I added each product — retailers change prices often, so please
-            check the current price on their site before buying.
+            {site.name} never processes payments or sees your card details, and never shows prices directly — those
+            change too often to keep accurate here. When you tap Shop now, you&apos;re taken to the retailer&apos;s
+            own website, where you can see the current price and complete your purchase there.
           </p>
         </div>
       </main>

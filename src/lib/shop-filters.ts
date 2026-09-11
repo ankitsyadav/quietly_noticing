@@ -1,20 +1,15 @@
 /**
  * Pure filter/sort/search logic for /shop — kept separate from the client
- * component so it's unit-testable and so swapping the full product list for
- * a trimmed remote index later (Q7, at 300+ products) only touches the data
- * source, not this logic.
+ * component so it's unit-testable.
  */
 import type { Product } from './types';
 
-export const SORTS = ['newest', 'price-asc', 'price-desc', 'discount', 'trending'] as const;
+export const SORTS = ['newest', 'name-asc'] as const;
 export type Sort = (typeof SORTS)[number];
 
 export const SORT_LABELS: Record<Sort, string> = {
   newest: 'Newest',
-  'price-asc': 'Price: low to high',
-  'price-desc': 'Price: high to low',
-  discount: 'Biggest discount',
-  trending: 'Trending',
+  'name-asc': 'A to Z',
 };
 
 export type ShopFilters = {
@@ -29,7 +24,7 @@ export const DEFAULT_FILTERS: ShopFilters = { q: '', category: null, platform: n
 function matchesSearch(p: Product, q: string): boolean {
   if (!q.trim()) return true;
   const needle = q.trim().toLowerCase();
-  const haystack = [p.title, p.note, p.description, p.category, p.platform].filter(Boolean).join(' ').toLowerCase();
+  const haystack = [p.title, p.description, p.category, p.platform].filter(Boolean).join(' ').toLowerCase();
   return haystack.includes(needle);
 }
 
@@ -43,17 +38,8 @@ export function applyShopFilters(products: Product[], filters: ShopFilters): Pro
 
   result = [...result];
   switch (filters.sort) {
-    case 'price-asc':
-      result.sort((a, b) => a.price - b.price);
-      break;
-    case 'price-desc':
-      result.sort((a, b) => b.price - a.price);
-      break;
-    case 'discount':
-      result.sort((a, b) => (b.discountPercent ?? 0) - (a.discountPercent ?? 0));
-      break;
-    case 'trending':
-      result.sort((a, b) => Number(b.badge === 'Trending') - Number(a.badge === 'Trending'));
+    case 'name-asc':
+      result.sort((a, b) => a.title.localeCompare(b.title));
       break;
     case 'newest':
     default:

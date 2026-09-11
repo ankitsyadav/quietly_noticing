@@ -30,38 +30,28 @@ export function idFromSlug(slug: string): string | null {
 }
 
 /**
- * Accepts what a person actually types: `299`, `₹299`, `Rs. 1,299`,
- * `1,299.00`, `299/-`, `  299 `. Rejects anything left holding letters.
+ * Best-effort merchant name from a bare or shortened affiliate URL. There
+ * is no Platform column in the sheet, so this is the only source of the
+ * platform label shown on cards and used for the /shop platform filter.
  */
-export function parsePrice(raw: string): number | null {
-  const cleaned = raw
-    .replace(/[₹$]/g, '')
-    .replace(/\brs\.?/gi, '')
-    .replace(/\binr\b/gi, '')
-    .replace(/\/-/g, '')
-    .replace(/,/g, '')
-    .trim();
-  if (!cleaned || !/^\d+(\.\d+)?$/.test(cleaned)) return null;
-  const n = Number.parseFloat(cleaned);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
-
-/** Whole-percent saving. Null unless MRP is genuinely above the price. */
-export function discountPercent(price: number, mrp: number | null): number | null {
-  if (mrp === null || mrp <= price) return null;
-  const pct = Math.round(((mrp - price) / mrp) * 100);
-  return pct >= 1 ? pct : null;
-}
-
-const inr = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  maximumFractionDigits: 0,
-});
-
-/** ₹1,299 — Indian digit grouping, no stray decimals. */
-export function formatPrice(value: number): string {
-  return inr.format(value);
+export function inferPlatform(url: string): string {
+  const host = (() => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  })();
+  const known: [RegExp, string][] = [
+    [/amazon\.|amzn\.to/, 'Amazon'],
+    [/flipkart\.|fkrt\./, 'Flipkart'],
+    [/meesho\./, 'Meesho'],
+    [/myntra\./, 'Myntra'],
+    [/ajio\./, 'Ajio'],
+    [/nykaa\./, 'Nykaa'],
+  ];
+  for (const [re, name] of known) if (re.test(host)) return name;
+  return host || 'Other';
 }
 
 /**

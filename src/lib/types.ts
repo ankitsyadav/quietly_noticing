@@ -1,13 +1,18 @@
-/** Domain model. Everything downstream trusts these shapes. */
+/**
+ * Domain model. Everything downstream trusts these shapes.
+ *
+ * Deliberately minimal — matched exactly to the real Google Sheet, not to
+ * a schema invented ahead of it: Id, Title, Description, Category,
+ * Affliate_Link, Pic_1..4. Nothing else exists in the sheet, so nothing
+ * else lives here. Platform is inferred from the affiliate URL; category
+ * slugs are derived from whatever text appears in the Category column;
+ * there is no Note/Platform/Badge/Featured/Status column and no separate
+ * Categories or Collections tab.
+ */
 
-export const BADGES = ['Trending', 'New', 'Bestseller'] as const;
-export type Badge = (typeof BADGES)[number];
-
-export const STATUSES = ['Published', 'Draft', 'Sold Out'] as const;
-export type Status = (typeof STATUSES)[number];
-
-/** Minimum characters of original creator note required for Google indexing. */
-export const INDEXABLE_NOTE_MIN = 120;
+/** Minimum characters of description required for Google indexing — the
+ * thin-affiliate-content guard (see parse-catalog.ts). */
+export const INDEXABLE_DESCRIPTION_MIN = 120;
 
 export type Product = {
   /** Stable, manually assigned in the sheet. Anchors the URL forever. */
@@ -15,45 +20,25 @@ export type Product = {
   /** `${titleSlug}-${id}`. Retitling changes the prefix; the id still resolves. */
   slug: string;
   title: string;
-  /** Her personal recommendation. Drives indexability. */
-  note: string | null;
-  /** Factual product copy. */
   description: string | null;
   category: string;
   categorySlug: string;
+  /** Inferred from the affiliate URL's host — there is no Platform column. */
   platform: string;
   affiliateUrl: string;
-  price: number;
-  mrp: number | null;
-  /** Whole percent, only when MRP is genuinely higher. */
-  discountPercent: number | null;
-  badge: Badge | null;
-  featured: boolean;
-  soldOut: boolean;
   /** 1–4 URLs. images[0] is Pic_1 — the grid thumbnail, LCP element and OG source. */
   images: string[];
-  /** True only with an original note of at least INDEXABLE_NOTE_MIN chars. */
+  /** True only when the description is at least INDEXABLE_DESCRIPTION_MIN chars. */
   indexable: boolean;
   /** 1-based spreadsheet row, for /health. */
   row: number;
 };
 
+/** Derived purely from the distinct Category values used across products —
+ * there is no separate Categories tab to curate order/blurb/cover from. */
 export type Category = {
   name: string;
   slug: string;
-  order: number;
-  cover: string | null;
-  /** Indexable prose for the category page. */
-  blurb: string | null;
-  featured: boolean;
-};
-
-export type Collection = {
-  name: string;
-  slug: string;
-  productIds: string[];
-  caption: string | null;
-  cover: string | null;
 };
 
 /** A product that used to exist. Powers the 410 tombstone page. */
@@ -75,12 +60,9 @@ export type RowIssue = {
 export type Catalog = {
   products: Product[];
   categories: Category[];
-  collections: Collection[];
   /** Rows rejected by validation. */
   issues: RowIssue[];
-  /** Status = Draft. Deliberately hidden, not an error. */
-  draftCount: number;
-  /** Published products lacking a long enough note. */
+  /** Published products whose description is too short to index. */
   notIndexable: Product[];
   /** ISO timestamp of the successful read. */
   syncedAt: string;

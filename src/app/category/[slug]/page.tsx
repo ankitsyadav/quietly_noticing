@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = catalog.categories.find((c) => c.slug === slug);
   if (!category) return { title: 'Category' };
 
-  const description = category.blurb ?? `${category.name} picks on ${site.name}.`;
+  const description = `${category.name} picks on ${site.name}.`;
   const canonical = `${site.url}/category/${category.slug}`;
   return {
     title: category.name,
@@ -34,7 +34,7 @@ export default async function CategoryPage({ params }: Props) {
   const category = catalog.categories.find((c) => c.slug === slug);
   if (!category) notFound();
 
-  const products = catalog.products.filter((p) => p.categorySlug === slug && !p.soldOut);
+  const products = catalog.products.filter((p) => p.categorySlug === slug);
 
   return (
     <>
@@ -42,7 +42,6 @@ export default async function CategoryPage({ params }: Props) {
       <main>
         <div className="mx-auto max-w-5xl px-4 pb-2 pt-6">
           <h1 className="text-2xl font-medium text-ink">{category.name}</h1>
-          {category.blurb && <p className="mt-1 max-w-md text-sm text-muted">{category.blurb}</p>}
         </div>
         {products.length > 0 ? (
           <ProductFeed products={products} />

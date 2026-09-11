@@ -3,9 +3,9 @@ import { getCatalog } from '@/lib/catalog';
 import { site } from '@/config/site';
 
 /**
- * Only products that clear the indexability gate (a real note, Q31) get a
- * sitemap entry — the sitemap and the noindex/index metadata always agree,
- * since both read the same `product.indexable` flag.
+ * Only products that clear the indexability gate (a real description) get
+ * a sitemap entry — the sitemap and the noindex/index metadata always
+ * agree, since both read the same `product.indexable` flag.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const catalog = await getCatalog();

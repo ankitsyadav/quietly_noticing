@@ -1,15 +1,14 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { Product } from '@/lib/types';
-import { formatDiscount, formatPrice } from '@/lib/format';
 import { ProductCard } from './product-card';
 import { ProductImage } from './product-image';
 import { ADAPTIVE_GRID_THRESHOLD } from '@/lib/constants';
 
 /**
- * Adaptive per Q23: under the threshold, a single-column editorial feed
- * (a thin catalogue reads as curated, not abandoned); at/above it, the
- * familiar 2-up grid with full card treatment.
+ * Adaptive: under the threshold, a single-column editorial feed (a thin
+ * catalogue reads as curated, not abandoned); at/above it, the familiar
+ * 2-up grid with full card treatment.
  */
 export function ProductFeed({ products, heading }: { products: Product[]; heading?: string }) {
   if (products.length === 0) return null;
@@ -18,7 +17,9 @@ export function ProductFeed({ products, heading }: { products: Product[]; headin
     return (
       <section className="mx-auto max-w-5xl px-4 py-4">
         {heading && <h2 className="mb-4 text-lg font-medium text-ink">{heading}</h2>}
-        <div className="flex flex-col gap-8">
+        {/* Capped width: at full desktop measure a 4:5 image reads as an
+            oversized banner rather than a curated single-column feed. */}
+        <div className="mx-auto flex max-w-sm flex-col gap-8">
           {products.map((p) => (
             <EditorialRow key={p.id} product={p} />
           ))}
@@ -55,13 +56,6 @@ function EditorialRow({ product }: { product: Product }) {
         <div>
           <p className="text-xs text-muted">{product.platform}</p>
           <h3 className="text-base font-medium text-ink">{product.title}</h3>
-          <div className="mt-1 flex items-baseline gap-2 tabular-nums">
-            <span className="text-base font-semibold text-ink">{formatPrice(product.price)}</span>
-            {product.mrp && <span className="text-sm text-muted line-through">{formatPrice(product.mrp)}</span>}
-            {product.discountPercent && (
-              <span className="text-xs font-medium text-accent-text">{formatDiscount(product.discountPercent)}</span>
-            )}
-          </div>
         </div>
         <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-muted" strokeWidth={1.75} aria-hidden="true" />
       </div>

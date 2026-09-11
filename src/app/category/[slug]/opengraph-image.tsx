@@ -12,7 +12,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const catalog = await getCatalog();
   const category = catalog.categories.find((c) => c.slug === slug);
   const name = category?.name ?? 'Shop';
-  const blurb = category?.blurb ?? site.tagline;
+  const blurb = site.tagline;
 
   const text = `${name} ${blurb} ${site.name}`;
   const [displayFont, bodyFont] = await Promise.all([

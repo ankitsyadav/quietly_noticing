@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getCatalog } from '@/lib/catalog';
 import { SiteHeader } from '@/components/site-header';
 import { RefreshButton } from '@/components/refresh-button';
-import { INDEXABLE_NOTE_MIN } from '@/lib/types';
+import { INDEXABLE_DESCRIPTION_MIN } from '@/lib/types';
 
 export const metadata: Metadata = {
   title: 'Site health',
@@ -18,8 +18,6 @@ function timeAgo(iso: string): string {
 
 export default async function HealthPage() {
   const catalog = await getCatalog();
-  const live = catalog.products.filter((p) => !p.soldOut);
-  const soldOut = catalog.products.filter((p) => p.soldOut);
 
   return (
     <>
@@ -45,10 +43,9 @@ export default async function HealthPage() {
           <RefreshButton />
         </div>
 
-        <dl className="mt-5 grid grid-cols-3 gap-3 text-center">
-          <Stat label="Live" value={live.length} />
-          <Stat label="Sold out" value={soldOut.length} />
-          <Stat label="Draft (hidden)" value={catalog.draftCount} />
+        <dl className="mt-5 grid grid-cols-2 gap-3 text-center">
+          <Stat label="Live products" value={catalog.products.length} />
+          <Stat label="Categories" value={catalog.categories.length} />
         </dl>
 
         <Section title={`Not showing (${catalog.issues.length})`} empty="Nothing to fix — every row looks good.">
@@ -63,12 +60,12 @@ export default async function HealthPage() {
         </Section>
 
         <Section
-          title={`Missing a note (${catalog.notIndexable.length})`}
-          empty="Every live product has a long enough note to show up in Google."
+          title={`Missing a description (${catalog.notIndexable.length})`}
+          empty="Every live product has a long enough description to show up in Google."
         >
           <p className="mb-2 text-xs text-muted">
-            These won&apos;t appear in Google search yet — add a note of at least {INDEXABLE_NOTE_MIN} characters
-            explaining why you picked it, and it will start showing up.
+            These won&apos;t appear in Google search yet — write a description of at least {INDEXABLE_DESCRIPTION_MIN}{' '}
+            characters, and it will start showing up.
           </p>
           {catalog.notIndexable.map((p) => (
             <li key={p.id} className="flex items-center justify-between border-b border-line py-2 text-sm last:border-none">

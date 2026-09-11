@@ -5,15 +5,14 @@ import { CategoryChips } from '@/components/category-chips';
 import { ProductFeed } from '@/components/product-feed';
 
 /**
- * The generic 404 (Q39) — distinct from the product tombstone (410) in
+ * The generic 404 — distinct from the product tombstone (410) in
  * /product/[slug], which knows what specifically went missing. This one
  * covers everything else: a mistyped URL, an old bookmark, a stray link.
  * Never a dead end — search, categories, and a few live picks to browse.
  */
 export default async function NotFound() {
   const catalog = await getCatalog();
-  const trending = catalog.products.filter((p) => !p.soldOut && p.badge === 'Trending').slice(0, 8);
-  const chips = catalog.categories.filter((c) => c.featured);
+  const recent = [...catalog.products].reverse().slice(0, 8);
 
   return (
     <>
@@ -28,8 +27,8 @@ export default async function NotFound() {
           instead, or browse a category below.
         </p>
       </main>
-      <CategoryChips categories={chips} />
-      {trending.length > 0 && <ProductFeed heading="Trending now" products={trending} />}
+      <CategoryChips categories={catalog.categories} />
+      {recent.length > 0 && <ProductFeed heading="Recently added" products={recent} />}
     </>
   );
 }

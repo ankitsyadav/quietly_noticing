@@ -25,13 +25,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product) return { title: 'Product' };
 
   const canonical = `${site.url}/product/${product.slug}`;
-  const description = product.note ?? product.description ?? `${product.title} — spotted on ${site.name}.`;
+  const description = product.description ?? `${product.title} — spotted on ${site.name}.`;
 
   return {
     title: product.title,
     description,
     alternates: { canonical },
-    // Conditional indexing per Q31 — only a real, original note earns a
+    // Conditional indexing — only a description of real length earns a
     // place in Google's index. Thin merchant-copy pages stay noindex.
     robots: product.indexable ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: {
@@ -53,9 +53,7 @@ export default async function ProductPage({ params }: Props) {
     if (tombstone) {
       // A real, deliberate 410 rather than a bare 404 — the visitor who
       // saved or shared this link is the highest-intent one we'll ever get.
-      const alternatives = catalog.products
-        .filter((p) => !p.soldOut && p.categorySlug === tombstone.categorySlug)
-        .slice(0, 8);
+      const alternatives = catalog.products.filter((p) => p.categorySlug === tombstone.categorySlug).slice(0, 8);
       return (
         <>
           <SiteHeader />
@@ -74,8 +72,8 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  // Retitling changes the slug's title prefix, not its trailing id (Q18) —
-  // an old link still resolves here, so send it on to the current spelling.
+  // Retitling changes the slug's title prefix, not its trailing id — an
+  // old link still resolves here, so send it on to the current spelling.
   // permanentRedirect (308), not redirect (307): this is a durable rename,
   // and 308 is what preserves SEO equity / lets crawlers drop the old URL.
   if (product.slug !== slug) {
@@ -83,7 +81,7 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const related = catalog.products
-    .filter((p) => p.id !== product.id && p.categorySlug === product.categorySlug && !p.soldOut)
+    .filter((p) => p.id !== product.id && p.categorySlug === product.categorySlug)
     .slice(0, 10);
   const categoryName = catalog.categories.find((c) => c.slug === product.categorySlug)?.name ?? product.category;
 
@@ -101,18 +99,11 @@ export default async function ProductPage({ params }: Props) {
             '@context': 'https://schema.org',
             '@type': 'Product',
             name: product.title,
-            description: product.note ?? product.description ?? undefined,
+            description: product.description ?? undefined,
             image: product.images,
             category: product.category,
-            offers: {
-              '@type': 'Offer',
-              price: product.price,
-              priceCurrency: 'INR',
-              availability: product.soldOut
-                ? 'https://schema.org/OutOfStock'
-                : 'https://schema.org/InStock',
-              url: product.affiliateUrl,
-            },
+            // No `offers`/price block — the sheet carries no price, and the
+            // site deliberately never displays one (see Q34 pivot).
           }),
         }}
       />

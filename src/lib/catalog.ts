@@ -1,19 +1,17 @@
 /**
  * Single entry point every page/route uses to get catalog data.
  *
- * DATA_SOURCE=fixture (default) — dummy data, no network, no keys needed.
- * DATA_SOURCE=sheet             — live Google Sheet via Sheets API v4,
- *                                  falling back to the committed snapshot
- *                                  (data/snapshot.json) if the fetch fails.
- *
- * This is the ONE place that decides fixture vs. live vs. snapshot — pages
- * never branch on DATA_SOURCE themselves.
+ * The live Google Sheet is the only source of truth — reads through
+ * fetchProductsGrid() (see sheets.ts), revalidated every 60s. If that
+ * fetch fails (a Google outage, a sharing-permission change), we fall back
+ * to the last-known-good committed snapshot (data/snapshot.json) so the
+ * site stays up instead of going blank.
  */
 import 'server-only';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { buildCatalog, type ValueGrid } from './parse-catalog';
-import { fixtureProductsGrid, fixtureCategoriesGrid, fixtureCollectionsGrid } from '@/data/fixture';
+import { fetchProductsGrid } from './sheets';
 import type { Catalog } from './types';
 
 // process.cwd()-relative rather than import.meta.url — the latter gets
@@ -21,41 +19,26 @@ import type { Catalog } from './types';
 // this file is only ever read at runtime, not bundled as an asset.
 const SNAPSHOT_PATH = join(process.cwd(), 'data', 'snapshot.json');
 
-async function loadSnapshotGrids(): Promise<{
-  productsGrid: ValueGrid;
-  categoriesGrid: ValueGrid;
-  collectionsGrid: ValueGrid;
-} | null> {
+async function loadSnapshotGrid(): Promise<ValueGrid | null> {
   try {
     const raw = await readFile(SNAPSHOT_PATH, 'utf8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Tolerate the older { productsGrid, categoriesGrid, collectionsGrid }
+    // snapshot shape from before the schema simplified to one tab.
+    return Array.isArray(parsed) ? parsed : (parsed.productsGrid ?? null);
   } catch {
     return null;
   }
 }
 
 export async function getCatalog(): Promise<Catalog> {
-  const source = process.env.DATA_SOURCE ?? 'fixture';
-
-  if (source === 'fixture') {
-    return buildCatalog({
-      productsGrid: fixtureProductsGrid,
-      categoriesGrid: fixtureCategoriesGrid,
-      collectionsGrid: fixtureCollectionsGrid,
-      syncedAt: new Date().toISOString(),
-      fromSnapshot: false,
-    });
-  }
-
-  // source === 'sheet'
-  const { fetchSheetGrids } = await import('./sheets');
   try {
-    const grids = await fetchSheetGrids();
-    return buildCatalog({ ...grids, syncedAt: new Date().toISOString(), fromSnapshot: false });
+    const productsGrid = await fetchProductsGrid();
+    return buildCatalog({ productsGrid, syncedAt: new Date().toISOString(), fromSnapshot: false });
   } catch (err) {
     console.error('[catalog] live sheet fetch failed, falling back to snapshot:', err);
-    const snapshot = await loadSnapshotGrids();
-    if (!snapshot) throw err; // no fallback available — surface the real error
-    return buildCatalog({ ...snapshot, syncedAt: new Date().toISOString(), fromSnapshot: true });
+    const productsGrid = await loadSnapshotGrid();
+    if (!productsGrid) throw err; // no fallback available — surface the real error
+    return buildCatalog({ productsGrid, syncedAt: new Date().toISOString(), fromSnapshot: true });
   }
 }

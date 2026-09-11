@@ -6,19 +6,14 @@ import { ProductFeed } from '@/components/product-feed';
 
 export default async function HomePage() {
   const catalog = await getCatalog();
-  const live = catalog.products.filter((p) => !p.soldOut);
-  const featuredCategories = catalog.categories.filter((c) => c.featured);
-  const chips = featuredCategories.length > 0 ? featuredCategories : catalog.categories;
-  const featured = live.filter((p) => p.featured);
-  const latest = [...live].reverse(); // sheet order ~= newest-added-last
+  const latest = [...catalog.products].reverse(); // sheet order ~= newest-added-last
 
   return (
     <>
       <SiteHeader />
       <main>
         <Hero />
-        <CategoryChips categories={chips} />
-        {featured.length > 0 && <ProductFeed heading="Featured picks" products={featured.slice(0, 8)} />}
+        <CategoryChips categories={catalog.categories} />
         <ProductFeed heading="Latest finds" products={latest} />
       </main>
     </>
