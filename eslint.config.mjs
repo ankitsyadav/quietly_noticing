@@ -16,6 +16,18 @@ const eslintConfig = [
     files: ['**/opengraph-image.tsx', '**/twitter-image.tsx', '**/icon.tsx'],
     rules: { '@next/next/no-img-element': 'off' },
   },
+  {
+    // A leading underscore is the standard signal for "intentionally
+    // unused, kept for documentation/future use" — e.g. photo(_keywords)
+    // in the fixture, which keeps each image call self-documenting even
+    // while the source doesn't do keyword matching.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;
