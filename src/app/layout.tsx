@@ -4,6 +4,7 @@ import './globals.css';
 import { site } from '@/config/site';
 import { colors } from '@/config/theme';
 import { MotionProvider } from '@/components/motion-provider';
+import { jsonLdScript } from '@/lib/json-ld';
 
 // Self-hosted via next/font — no runtime request to Google, no CLS from a
 // late-swapping web font. Variable fonts keep this to two font files total.
@@ -57,8 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <MotionProvider>{children}</MotionProvider>
         <script
           type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(personJsonLd) }}
         />
       </body>
     </html>

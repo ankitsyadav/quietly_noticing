@@ -6,10 +6,10 @@
  */
 import 'server-only';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import type { Tombstone } from './types';
 
-const PATH = fileURLToPath(new URL('../../data/tombstones.json', import.meta.url));
+const PATH = join(process.cwd(), 'data', 'tombstones.json');
 
 export async function getTombstone(slug: string): Promise<Tombstone | null> {
   try {

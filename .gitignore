@@ -9,3 +9,6 @@ next-env.d.ts
 src/app/theme.generated.css
 .DS_Store
 coverage/
+.playwright-mcp/
+AGENTS.md
+CLAUDE.md

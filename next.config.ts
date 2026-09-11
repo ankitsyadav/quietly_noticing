@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
       // covers a stray merchant CDN URL someone pastes anyway.
       { protocol: 'https', hostname: 'i.postimg.cc' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
-      { protocol: 'https', hostname: 'picsum.photos' }, // fixture data only
+      { protocol: 'https', hostname: 'loremflickr.com' }, // fixture data only
       { protocol: 'https', hostname: '**' },
     ],
   },

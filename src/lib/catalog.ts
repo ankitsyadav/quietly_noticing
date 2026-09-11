@@ -11,12 +11,15 @@
  */
 import 'server-only';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { buildCatalog, type ValueGrid } from './parse-catalog';
 import { fixtureProductsGrid, fixtureCategoriesGrid, fixtureCollectionsGrid } from '@/data/fixture';
 import type { Catalog } from './types';
 
-const SNAPSHOT_PATH = fileURLToPath(new URL('../../data/snapshot.json', import.meta.url));
+// process.cwd()-relative rather than import.meta.url — the latter gets
+// statically analyzed (and fails hard) by Turbopack's bundler even though
+// this file is only ever read at runtime, not bundled as an asset.
+const SNAPSHOT_PATH = join(process.cwd(), 'data', 'snapshot.json');
 
 async function loadSnapshotGrids(): Promise<{
   productsGrid: ValueGrid;

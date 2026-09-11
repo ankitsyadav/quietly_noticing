@@ -1,17 +1,20 @@
 'use client';
 
 /**
- * LazyMotion + the "domAnimation" feature bundle instead of importing the
- * full `motion` object everywhere. Per the perf budget (Q29/Q32), this is
- * what takes Framer Motion from ~34KB to ~15KB gzipped — every animated
- * component below uses the lowercase `m.div` etc., never `motion.div`.
+ * LazyMotion + the "domMax" feature bundle instead of importing the full
+ * `motion` object everywhere — every animated component uses the lowercase
+ * `m.div` etc., never `motion.div`. domMax (not the lighter domAnimation)
+ * because the product gallery's swipe carousel and the filter bottom sheet
+ * both use drag gestures, which domAnimation doesn't include. This is the
+ * deliberate cost of "heavy Framer everywhere" (Q32/Q33) — the LCP path
+ * itself still never depends on JS animation, so it's unaffected.
  */
-import { LazyMotion, domAnimation, MotionConfig } from 'framer-motion';
+import { LazyMotion, domMax, MotionConfig } from 'framer-motion';
 import { motion as motionTokens } from '@/config/theme';
 
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   return (
-    <LazyMotion features={domAnimation} strict>
+    <LazyMotion features={domMax} strict>
       <MotionConfig
         transition={{ duration: motionTokens.duration.reveal, ease: motionTokens.ease.out }}
         reducedMotion="user"
