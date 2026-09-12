@@ -8,9 +8,10 @@
  */
 import Image from 'next/image';
 import { m } from 'framer-motion';
+import { Heart } from 'lucide-react';
 import { site } from '@/config/site';
 import { InstagramIcon, YoutubeIcon } from './icons';
-import { heroItem, staggerContainer } from '@/lib/motion';
+import { heroItem, flipIn, staggerContainer } from '@/lib/motion';
 
 const socials = [
   { href: site.creator.instagram, label: 'Instagram', Icon: InstagramIcon },
@@ -59,9 +60,15 @@ export function Hero() {
         ))}
       </m.div>
 
-      <m.p custom={4} variants={heroItem} className="max-w-xs text-xs text-muted">
-        {site.disclosure.short}
-      </m.p>
+      <m.div
+        custom={4}
+        variants={flipIn}
+        style={{ transformStyle: 'preserve-3d' }}
+        className="flex origin-top items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-muted shadow-sm"
+      >
+        <Heart className="h-3.5 w-3.5 shrink-0 text-accent" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+        {site.pickNote}
+      </m.div>
     </m.section>
   );
 }

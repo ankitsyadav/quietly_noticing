@@ -15,6 +15,8 @@ export const site = {
     instagramHandle: '@quietly__noticing',
     youtube: 'https://www.youtube.com/@quietly__noticing',
   },
+  /** Hero badge copy — the friendly, non-legal framing of "these are affiliate picks". */
+  pickNote: "Neha's edit — if she loves it, you will too.",
   disclosure: {
     short: 'Some links here earn me a small commission — it never changes what I recommend.',
     amazonRequired: 'As an Amazon Associate I earn from qualifying purchases.',

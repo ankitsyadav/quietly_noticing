@@ -55,6 +55,35 @@ export const scrimVariants: Variants = {
   exit: { opacity: 0, transition: { duration: tokens.duration.sheet } },
 };
 
+/**
+ * 3D flip-open, used for the hero's pick-note badge only — a genuine
+ * rotateX (not a fake translate), safe below the LCP element since it's
+ * always the last thing in the hero cascade.
+ */
+export const flipIn: Variants = {
+  hidden: { opacity: 0, transform: 'perspective(700px) rotateX(-65deg)' },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    transform: 'perspective(700px) rotateX(0deg)',
+    transition: { duration: tokens.duration.hero, ease: tokens.ease.out, delay: i * tokens.stagger },
+  }),
+};
+
+/**
+ * Editorial feed row — a 3D card lift-in (rotateX + scale, not just
+ * translate) for the single-column /product-feed layout. Pair with
+ * useInView (see product-feed.tsx) so it fires once per row on scroll,
+ * same pattern as ProductCard.
+ */
+export const editorialReveal: Variants = {
+  hidden: { opacity: 0, transform: 'perspective(800px) rotateX(8deg) translateY(24px) scale(0.98)' },
+  visible: {
+    opacity: 1,
+    transform: 'perspective(800px) rotateX(0deg) translateY(0px) scale(1)',
+    transition: { duration: tokens.duration.reveal, ease: tokens.ease.out },
+  },
+};
+
 /** Container that staggers its children using revealUp/heroItem custom index. */
 export const staggerContainer: Variants = {
   hidden: {},

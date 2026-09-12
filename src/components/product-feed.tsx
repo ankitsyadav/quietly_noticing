@@ -1,9 +1,14 @@
+'use client';
+
+import { useRef } from 'react';
 import Link from 'next/link';
+import { m, useInView, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { ProductCard } from './product-card';
 import { ProductImage } from './product-image';
 import { ADAPTIVE_GRID_THRESHOLD } from '@/lib/constants';
+import { editorialReveal } from '@/lib/motion';
 
 /**
  * Adaptive: under the threshold, a single-column editorial feed (a thin
@@ -42,22 +47,46 @@ export function ProductFeed({ products, heading }: { products: Product[]; headin
 
 function EditorialRow({ product }: { product: Product }) {
   const href = `/product/${product.slug}`;
+
+  // One-shot 3D reveal as the row scrolls into view (observer detaches
+  // after, same as ProductCard's grid path), plus a continuous parallax
+  // drift on the image itself while it's in the scroll range — this is
+  // the part touch scrolling actually shows, unlike Tilt's pointer-hover.
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '0px 0px -80px 0px' });
+  const reducedMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const imageY = useTransform(scrollYProgress, [0, 1], reducedMotion ? [0, 0] : [28, -28]);
+
   return (
     <Link href={href} className="group flex flex-col gap-3">
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-sink">
-        <ProductImage
-          src={product.images[0]!}
-          alt={`${product.title} — ${product.category}`}
-          sizes="(min-width: 640px) 560px, 100vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-        />
-      </div>
+      <m.div
+        ref={ref}
+        variants={editorialReveal}
+        initial="hidden"
+        animate={inView ? 'visible' : 'hidden'}
+        style={{ transformStyle: 'preserve-3d' }}
+        className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-sink"
+      >
+        <m.div style={{ y: imageY }} className="absolute inset-[-12%]">
+          <ProductImage
+            src={product.images[0]!}
+            alt={`${product.title} — ${product.category}`}
+            sizes="(min-width: 640px) 560px, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+          />
+        </m.div>
+      </m.div>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs text-muted">{product.platform}</p>
           <h3 className="text-base font-medium text-ink">{product.title}</h3>
         </div>
-        <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-muted" strokeWidth={1.75} aria-hidden="true" />
+        <ArrowRight
+          className="mt-1 h-5 w-5 shrink-0 text-muted transition-transform group-active:translate-x-0.5"
+          strokeWidth={1.75}
+          aria-hidden="true"
+        />
       </div>
     </Link>
   );
